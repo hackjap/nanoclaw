@@ -21,9 +21,9 @@
 
 ### Jira Integration
 
-- [ ] **JIRA-01**: jira.js를 통해 Jira REST API v3로 고정 프로젝트에 이슈를 생성한다
-- [ ] **JIRA-02**: 이슈 설명을 ADF(Atlassian Document Format)로 변환하여 전송한다
-- [ ] **JIRA-03**: Jira 크리덴셜(host, email, API token, project key)을 .env/credential proxy로 관리한다
+- [x] **JIRA-01**: jira.js를 통해 Jira REST API v3로 고정 프로젝트에 이슈를 생성한다
+- [x] **JIRA-02**: 이슈 설명을 ADF(Atlassian Document Format)로 변환하여 전송한다
+- [x] **JIRA-03**: Jira 크리덴셜(host, email, API token, project key)을 .env/credential proxy로 관리한다
 
 ### Draft & Approval
 
@@ -36,7 +36,7 @@
 ### Notification & Error
 
 - [ ] **NOTF-01**: Jira 이슈 생성 후 스레드에 이슈 링크가 포함된 확인 답글을 게시한다
-- [ ] **ERRH-01**: Jira API 실패 시 스레드에 사용자 친화적 에러 메시지를 표시한다
+- [x] **ERRH-01**: Jira API 실패 시 스레드에 사용자 친화적 에러 메시지를 표시한다
 - [ ] **ERRH-02**: Slack interactive component 에러 시 사용자에게 피드백을 제공한다
 
 ## v2 Requirements
@@ -80,16 +80,16 @@
 | CONV-01 | Phase 2 | Pending |
 | CONV-02 | Phase 2 | Pending |
 | CONV-03 | Phase 2 | Pending |
-| JIRA-01 | Phase 3 | Pending |
-| JIRA-02 | Phase 3 | Pending |
-| JIRA-03 | Phase 3 | Pending |
+| JIRA-01 | Phase 3 | Complete |
+| JIRA-02 | Phase 3 | Complete |
+| JIRA-03 | Phase 3 | Complete |
 | DRFT-01 | Phase 4 | Pending |
 | DRFT-02 | Phase 4 | Pending |
 | DRFT-03 | Phase 4 | Pending |
 | DRFT-04 | Phase 4 | Pending |
 | DRFT-05 | Phase 3 | Pending |
 | NOTF-01 | Phase 4 | Pending |
-| ERRH-01 | Phase 3 | Pending |
+| ERRH-01 | Phase 3 | Complete |
 | ERRH-02 | Phase 4 | Pending |
 
 **Coverage:**
