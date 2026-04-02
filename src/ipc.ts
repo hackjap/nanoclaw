@@ -5,7 +5,7 @@ import { CronExpressionParser } from 'cron-parser';
 
 import { DATA_DIR, IPC_POLL_INTERVAL, TIMEZONE } from './config.js';
 import { AvailableGroup } from './container-runner.js';
-import { createTask, deleteTask, getTaskById, updateTask } from './db.js';
+import { createTask, deleteTask, getTaskById, saveDraft, updateTask } from './db.js';
 import { isValidGroupFolder } from './group-folder.js';
 import { logger } from './logger.js';
 import { RegisteredGroup, SendMessageOptions } from './types.js';
@@ -164,7 +164,13 @@ export function startIpcWatcher(deps: IpcDeps): void {
                 { type: data.type, sourceGroup, file },
                 'IPC action received',
               );
-              // Phase 2: log and remove. Phase 3/4 will add domain-specific handlers.
+              if (data.type === 'jira_draft' && data.thread_ts && data.chatJid && data.draft) {
+                saveDraft(data.thread_ts, data.chatJid, data.draft);
+                logger.info(
+                  { thread_ts: data.thread_ts, sourceGroup },
+                  'Jira draft saved',
+                );
+              }
               fs.unlinkSync(filePath);
             } catch (err) {
               logger.error(

@@ -31,7 +31,7 @@
 - [ ] **DRFT-02**: 미리보기에 승인/수정 버튼을 포함한다
 - [ ] **DRFT-03**: 승인 버튼 클릭 시 오케스트레이터가 Jira 이슈를 생성한다
 - [ ] **DRFT-04**: 수정 버튼 클릭 시 컨테이너 에이전트를 재호출하여 수정 대화를 시작한다
-- [ ] **DRFT-05**: 초안 데이터를 SQLite에 저장하여 비동기 버튼 클릭에 대응한다
+- [x] **DRFT-05**: 초안 데이터를 SQLite에 저장하여 비동기 버튼 클릭에 대응한다
 
 ### Notification & Error
 
@@ -87,7 +87,7 @@
 | DRFT-02 | Phase 4 | Pending |
 | DRFT-03 | Phase 4 | Pending |
 | DRFT-04 | Phase 4 | Pending |
-| DRFT-05 | Phase 3 | Pending |
+| DRFT-05 | Phase 3 | Complete |
 | NOTF-01 | Phase 4 | Pending |
 | ERRH-01 | Phase 3 | Complete |
 | ERRH-02 | Phase 4 | Pending |

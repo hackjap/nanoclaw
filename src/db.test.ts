@@ -6,13 +6,16 @@ import {
   deleteTask,
   getAllChats,
   getAllRegisteredGroups,
+  getDraft,
   getLastBotMessageTimestamp,
   getMessagesSince,
   getNewMessages,
   getTaskById,
+  saveDraft,
   setRegisteredGroup,
   storeChatMetadata,
   storeMessage,
+  updateDraftStatus,
   updateTask,
 } from './db.js';
 import { formatMessages } from './router.js';
@@ -568,5 +571,69 @@ describe('registered group isMain', () => {
     const group = groups['group@g.us'];
     expect(group).toBeDefined();
     expect(group.isMain).toBeUndefined();
+  });
+});
+
+// --- Jira draft CRUD ---
+
+describe('jira_drafts', () => {
+  it('saves and retrieves a draft', () => {
+    saveDraft('1712000000.000100', 'slack:C123', {
+      title: 'Bug title',
+      description: 'desc',
+      issueType: 'Bug',
+    });
+    const draft = getDraft('1712000000.000100');
+    expect(draft).toBeDefined();
+    expect(draft!.thread_ts).toBe('1712000000.000100');
+    expect(draft!.chat_jid).toBe('slack:C123');
+    expect(JSON.parse(draft!.draft)).toEqual({
+      title: 'Bug title',
+      description: 'desc',
+      issueType: 'Bug',
+    });
+    expect(draft!.status).toBe('draft');
+    expect(draft!.created_at).toBeTruthy();
+    expect(draft!.updated_at).toBeTruthy();
+  });
+
+  it('returns undefined for nonexistent draft', () => {
+    expect(getDraft('nonexistent')).toBeUndefined();
+  });
+
+  it('upserts on same thread_ts', () => {
+    saveDraft('1712000000.000100', 'slack:C123', {
+      title: 'V1',
+      description: 'd1',
+      issueType: 'Bug',
+    });
+    saveDraft('1712000000.000100', 'slack:C123', {
+      title: 'V2',
+      description: 'd2',
+      issueType: 'Task',
+    });
+    const draft = getDraft('1712000000.000100');
+    expect(JSON.parse(draft!.draft).title).toBe('V2');
+    expect(draft!.status).toBe('draft');
+  });
+
+  it('updates draft status', () => {
+    saveDraft('1712000000.000100', 'slack:C123', {
+      title: 'T',
+      description: 'd',
+      issueType: 'Story',
+    });
+    updateDraftStatus('1712000000.000100', 'approved');
+    expect(getDraft('1712000000.000100')!.status).toBe('approved');
+  });
+
+  it('updates status to created', () => {
+    saveDraft('1712000000.000100', 'slack:C123', {
+      title: 'T',
+      description: 'd',
+      issueType: 'Bug',
+    });
+    updateDraftStatus('1712000000.000100', 'created');
+    expect(getDraft('1712000000.000100')!.status).toBe('created');
   });
 });

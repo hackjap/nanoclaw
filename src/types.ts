@@ -84,6 +84,15 @@ export interface TaskRunLog {
   error: string | null;
 }
 
+export interface JiraDraft {
+  thread_ts: string;
+  chat_jid: string;
+  draft: string; // JSON string of { title, description, issueType }
+  status: 'draft' | 'approved' | 'created' | 'expired';
+  created_at: string;
+  updated_at: string;
+}
+
 // --- Channel abstraction ---
 
 export interface Channel {

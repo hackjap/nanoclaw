@@ -6,6 +6,7 @@ import { ASSISTANT_NAME, DATA_DIR, STORE_DIR } from './config.js';
 import { isValidGroupFolder } from './group-folder.js';
 import { logger } from './logger.js';
 import {
+  JiraDraft,
   NewMessage,
   RegisteredGroup,
   ScheduledTask,
@@ -82,6 +83,16 @@ function createSchema(database: Database.Database): void {
       container_config TEXT,
       requires_trigger INTEGER DEFAULT 1
     );
+    CREATE TABLE IF NOT EXISTS jira_drafts (
+      thread_ts TEXT PRIMARY KEY,
+      chat_jid TEXT NOT NULL,
+      draft TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_jira_drafts_status ON jira_drafts(status);
+    CREATE INDEX IF NOT EXISTS idx_jira_drafts_chat ON jira_drafts(chat_jid);
   `);
 
   // Add context_mode column if it doesn't exist (migration for existing DBs)
@@ -578,6 +589,42 @@ export function getAllSessions(): Record<string, string> {
     result[row.group_folder] = row.session_id;
   }
   return result;
+}
+
+// --- Jira draft accessors ---
+
+export function saveDraft(
+  threadTs: string,
+  chatJid: string,
+  draft: object,
+): void {
+  const now = new Date().toISOString();
+  db.prepare(
+    `
+    INSERT INTO jira_drafts (thread_ts, chat_jid, draft, status, created_at, updated_at)
+    VALUES (?, ?, ?, 'draft', ?, ?)
+    ON CONFLICT(thread_ts) DO UPDATE SET
+      draft = excluded.draft,
+      status = 'draft',
+      updated_at = excluded.updated_at
+  `,
+  ).run(threadTs, chatJid, JSON.stringify(draft), now, now);
+}
+
+export function getDraft(threadTs: string): JiraDraft | undefined {
+  return db
+    .prepare('SELECT * FROM jira_drafts WHERE thread_ts = ?')
+    .get(threadTs) as JiraDraft | undefined;
+}
+
+export function updateDraftStatus(
+  threadTs: string,
+  status: JiraDraft['status'],
+): void {
+  const now = new Date().toISOString();
+  db.prepare(
+    'UPDATE jira_drafts SET status = ?, updated_at = ? WHERE thread_ts = ?',
+  ).run(status, now, threadTs);
 }
 
 // --- Registered group accessors ---
