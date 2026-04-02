@@ -77,5 +77,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Thread-Aware Slack Infrastructure | 0/3 | Gap closure planned | - |
 | 2. AI Conversation Agent | 0/? | Not started | - |
-| 3. Jira Client & Draft Persistence | 0/? | Not started | - |
+| 3. Jira Client & Draft Persistence | 1/2 | In Progress|  |
 | 4. Interactive Approval Flow | 0/? | Not started | - |
