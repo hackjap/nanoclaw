@@ -5,11 +5,12 @@ import { HttpException } from 'jira.js';
 const mockCreateIssue = vi.fn();
 vi.mock('jira.js', async (importOriginal) => {
   const original = await importOriginal<typeof import('jira.js')>();
+  class MockVersion3Client {
+    issues = { createIssue: mockCreateIssue };
+  }
   return {
     ...original,
-    Version3Client: vi.fn().mockImplementation(() => ({
-      issues: { createIssue: mockCreateIssue },
-    })),
+    Version3Client: MockVersion3Client,
   };
 });
 
@@ -43,7 +44,12 @@ import {
   createJiraIssue,
   classifyError,
   textToAdf,
+  _resetClient,
 } from './jira-client.js';
+
+beforeEach(() => {
+  _resetClient();
+});
 
 describe('textToAdf', () => {
   it('converts single paragraph text to ADF', () => {
