@@ -30,7 +30,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. When a user clicks a button in a bot message, the app.action() handler receives the event and can respond
 **Plans:** 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Thread-aware message pipeline (thread_ts in NewMessage, sendMessage options, IPC/router/container wiring)
+- [x] 01-01-PLAN.md — Thread-aware message pipeline (thread_ts in NewMessage, sendMessage options, IPC/router/container wiring)
 - [ ] 01-02-PLAN.md — Interactive components and Block Kit (action callback registry, app.action handler, Block Kit message tests)
 
 ### Phase 2: AI Conversation Agent
