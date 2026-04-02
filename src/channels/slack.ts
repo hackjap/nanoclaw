@@ -14,6 +14,16 @@ import {
   SendMessageOptions,
 } from '../types.js';
 
+/** Payload passed to action handler callbacks registered via onAction(). */
+export interface ActionPayload {
+  action: { action_id: string; type: string; value?: string; [key: string]: unknown };
+  body: Record<string, unknown>;
+  respond: (message: Record<string, unknown>) => Promise<void>;
+}
+
+/** Callback type for Slack interactive component handlers. */
+export type ActionHandler = (payload: ActionPayload) => Promise<void>;
+
 // Slack's chat.postMessage API limits text to ~4000 characters per call.
 // Messages exceeding this are split into sequential chunks.
 const MAX_MESSAGE_LENGTH = 4000;
@@ -38,6 +48,7 @@ export class SlackChannel implements Channel {
   private outgoingQueue: Array<{ jid: string; text: string; options?: SendMessageOptions }> = [];
   private flushing = false;
   private userNameCache = new Map<string, string>();
+  private actionHandlers = new Map<string, ActionHandler>();
 
   private opts: SlackChannelOpts;
 
@@ -64,6 +75,7 @@ export class SlackChannel implements Channel {
     });
 
     this.setupEventHandlers();
+    this.setupActionHandlers();
   }
 
   private setupEventHandlers(): void {
@@ -229,6 +241,34 @@ export class SlackChannel implements Channel {
   // doesn't need channel-specific branching.
   async setTyping(_jid: string, _isTyping: boolean): Promise<void> {
     // no-op: Slack Bot API has no typing indicator endpoint
+  }
+
+  /**
+   * Register a handler for a Slack interactive component action by action_id.
+   * The orchestrator calls this to wire up button click callbacks (per D-07).
+   */
+  onAction(actionId: string, handler: ActionHandler): void {
+    this.actionHandlers.set(actionId, handler);
+  }
+
+  private setupActionHandlers(): void {
+    // Catch-all action handler -- routes to registered callbacks per D-05
+    this.app.action(/.+/, async ({ action, ack, body, respond }: any) => {
+      await ack(); // MUST be first -- 3 second Slack timeout (Pitfall 2)
+
+      const actionId = (action as { action_id: string }).action_id;
+      const handler = this.actionHandlers.get(actionId);
+
+      if (handler) {
+        try {
+          await handler({ action, body, respond });
+        } catch (err) {
+          logger.error({ actionId, err }, 'Action handler error');
+        }
+      } else {
+        logger.warn({ actionId }, 'No handler registered for action');
+      }
+    });
   }
 
   /**
