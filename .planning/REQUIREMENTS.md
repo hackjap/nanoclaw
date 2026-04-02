@@ -17,7 +17,7 @@
 
 - [ ] **CONV-01**: @멘션 시 AI 에이전트가 스레드에서 대화를 시작하여 필요한 정보를 질문한다
 - [ ] **CONV-02**: AI가 제목, 설명, 이슈타입(Bug/Task/Story) 정보를 대화형으로 수집한다
-- [ ] **CONV-03**: 정보 수집이 완료되면 구조화된 Jira 초안 JSON을 IPC로 오케스트레이터에 전달한다
+- [x] **CONV-03**: 정보 수집이 완료되면 구조화된 Jira 초안 JSON을 IPC로 오케스트레이터에 전달한다
 
 ### Jira Integration
 
@@ -79,7 +79,7 @@
 | SLCK-05 | Phase 4 | Pending |
 | CONV-01 | Phase 2 | Pending |
 | CONV-02 | Phase 2 | Pending |
-| CONV-03 | Phase 2 | Pending |
+| CONV-03 | Phase 2 | Complete |
 | JIRA-01 | Phase 3 | Pending |
 | JIRA-02 | Phase 3 | Pending |
 | JIRA-03 | Phase 3 | Pending |
