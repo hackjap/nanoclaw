@@ -42,7 +42,7 @@ Plans:
   1. When a user @mentions the bot with a work request, the AI agent asks clarifying questions in the thread to gather missing information
   2. The AI agent collects at minimum a title, description, and issue type (Bug/Task/Story) through conversation
   3. When sufficient information is collected, the container outputs a structured draft JSON via IPC actions directory
-**Plans:** 2 plans
+**Plans:** 0/2 plans executed
 Plans:
 - [ ] 02-01-PLAN.md — IPC actions/ infrastructure (submit_jira_draft MCP tool, actions/ directory creation, orchestrator polling, thread_ts env)
 - [ ] 02-02-PLAN.md — Agent prompt and end-to-end verification (CLAUDE.md Jira collection instructions, Slack integration test)
@@ -79,6 +79,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Thread-Aware Slack Infrastructure | 0/3 | Gap closure planned | - |
-| 2. AI Conversation Agent | 0/2 | Planned | - |
+| 2. AI Conversation Agent | 0/2 | Planned    |  |
 | 3. Jira Client & Draft Persistence | 0/? | Not started | - |
 | 4. Interactive Approval Flow | 0/? | Not started | - |

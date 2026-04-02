@@ -14,11 +14,13 @@ import { CronExpressionParser } from 'cron-parser';
 const IPC_DIR = '/workspace/ipc';
 const MESSAGES_DIR = path.join(IPC_DIR, 'messages');
 const TASKS_DIR = path.join(IPC_DIR, 'tasks');
+const ACTIONS_DIR = path.join(IPC_DIR, 'actions');
 
 // Context from environment variables (set by the agent runner)
 const chatJid = process.env.NANOCLAW_CHAT_JID!;
 const groupFolder = process.env.NANOCLAW_GROUP_FOLDER!;
 const isMain = process.env.NANOCLAW_IS_MAIN === '1';
+const threadTs = process.env.NANOCLAW_THREAD_TS || '';
 
 function writeIpcFile(dir: string, data: object): string {
   fs.mkdirSync(dir, { recursive: true });
@@ -45,6 +47,7 @@ server.tool(
   {
     text: z.string().describe('The message text to send'),
     sender: z.string().optional().describe('Your role/identity name (e.g. "Researcher"). When set, messages appear from a dedicated bot in Telegram.'),
+    thread_ts: z.string().optional().describe('Thread timestamp to reply in. Defaults to current thread if in a thread context.'),
   },
   async (args) => {
     const data: Record<string, string | undefined> = {
@@ -52,6 +55,7 @@ server.tool(
       chatJid,
       text: args.text,
       sender: args.sender || undefined,
+      thread_ts: args.thread_ts || threadTs || undefined,
       groupFolder,
       timestamp: new Date().toISOString(),
     };
@@ -59,6 +63,30 @@ server.tool(
     writeIpcFile(MESSAGES_DIR, data);
 
     return { content: [{ type: 'text' as const, text: 'Message sent.' }] };
+  },
+);
+
+server.tool(
+  'submit_jira_draft',
+  'Submit a Jira issue draft after collecting all required information from the user. Call this when you have title, description, and issueType.',
+  {
+    title: z.string().describe('Issue title — concise one-line summary'),
+    description: z.string().describe('Issue description — detailed content'),
+    issueType: z.enum(['Bug', 'Task', 'Story']).describe('Issue type'),
+  },
+  async (args) => {
+    const data = {
+      type: 'jira_draft' as const,
+      chatJid,
+      thread_ts: threadTs,
+      draft: {
+        title: args.title,
+        description: args.description,
+        issueType: args.issueType,
+      },
+    };
+    writeIpcFile(ACTIONS_DIR, data);
+    return { content: [{ type: 'text' as const, text: 'Draft submitted.' }] };
   },
 );
 
