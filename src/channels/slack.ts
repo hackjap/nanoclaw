@@ -11,6 +11,7 @@ import {
   OnInboundMessage,
   OnChatMetadata,
   RegisteredGroup,
+  SendMessageOptions,
 } from '../types.js';
 
 // Slack's chat.postMessage API limits text to ~4000 characters per call.
@@ -34,7 +35,7 @@ export class SlackChannel implements Channel {
   private app: App;
   private botUserId: string | undefined;
   private connected = false;
-  private outgoingQueue: Array<{ jid: string; text: string }> = [];
+  private outgoingQueue: Array<{ jid: string; text: string; options?: SendMessageOptions }> = [];
   private flushing = false;
   private userNameCache = new Map<string, string>();
 
@@ -79,9 +80,8 @@ export class SlackChannel implements Channel {
 
       if (!msg.text) return;
 
-      // Threaded replies are flattened into the channel conversation.
-      // The agent sees them alongside channel-level messages; responses
-      // always go to the channel, not back into the thread.
+      // Per D-01: propagate thread_ts for thread-aware routing
+      const threadTs = (msg as GenericMessageEvent).thread_ts;
 
       const jid = `slack:${msg.channel}`;
       const timestamp = new Date(parseFloat(msg.ts) * 1000).toISOString();
@@ -94,8 +94,7 @@ export class SlackChannel implements Channel {
       const groups = this.opts.registeredGroups();
       if (!groups[jid]) return;
 
-      const isBotMessage =
-        !!msg.bot_id || msg.user === this.botUserId;
+      const isBotMessage = !!msg.bot_id || msg.user === this.botUserId;
 
       let senderName: string;
       if (isBotMessage) {
@@ -113,7 +112,10 @@ export class SlackChannel implements Channel {
       let content = msg.text;
       if (this.botUserId && !isBotMessage) {
         const mentionPattern = `<@${this.botUserId}>`;
-        if (content.includes(mentionPattern) && !TRIGGER_PATTERN.test(content)) {
+        if (
+          content.includes(mentionPattern) &&
+          !TRIGGER_PATTERN.test(content)
+        ) {
           content = `@${ASSISTANT_NAME} ${content}`;
         }
       }
@@ -127,6 +129,7 @@ export class SlackChannel implements Channel {
         timestamp,
         is_from_me: isBotMessage,
         is_bot_message: isBotMessage,
+        thread_ts: threadTs || msg.ts, // For @mention (no thread): use msg.ts as new thread parent. For thread reply: use existing thread_ts.
       });
     });
   }
@@ -142,10 +145,7 @@ export class SlackChannel implements Channel {
       this.botUserId = auth.user_id as string;
       logger.info({ botUserId: this.botUserId }, 'Connected to Slack');
     } catch (err) {
-      logger.warn(
-        { err },
-        'Connected to Slack but failed to get bot user ID',
-      );
+      logger.warn({ err }, 'Connected to Slack but failed to get bot user ID');
     }
 
     this.connected = true;
@@ -157,11 +157,11 @@ export class SlackChannel implements Channel {
     await this.syncChannelMetadata();
   }
 
-  async sendMessage(jid: string, text: string): Promise<void> {
+  async sendMessage(jid: string, text: string, options?: SendMessageOptions): Promise<void> {
     const channelId = jid.replace(/^slack:/, '');
 
     if (!this.connected) {
-      this.outgoingQueue.push({ jid, text });
+      this.outgoingQueue.push({ jid, text, options });
       logger.info(
         { jid, queueSize: this.outgoingQueue.length },
         'Slack disconnected, message queued',
@@ -170,20 +170,40 @@ export class SlackChannel implements Channel {
     }
 
     try {
+      // Build base params with optional thread_ts and blocks.
+      // Cast needed because ChatPostMessageArguments is a complex discriminated union
+      // that doesn't accept dynamic property assignment cleanly.
+      const baseParams = {
+        channel: channelId,
+        text,
+        ...(options?.thread_ts && { thread_ts: options.thread_ts }),
+      };
+
+      if (options?.blocks) {
+        // Don't split Block Kit messages -- send as-is
+        await this.app.client.chat.postMessage({
+          ...baseParams,
+          blocks: options.blocks as any[], // eslint-disable-line @typescript-eslint/no-explicit-any
+        });
+        logger.info({ jid, length: text.length }, 'Slack message sent');
+        return;
+      }
+
       // Slack limits messages to ~4000 characters; split if needed
       if (text.length <= MAX_MESSAGE_LENGTH) {
-        await this.app.client.chat.postMessage({ channel: channelId, text });
+        await this.app.client.chat.postMessage(baseParams);
       } else {
         for (let i = 0; i < text.length; i += MAX_MESSAGE_LENGTH) {
           await this.app.client.chat.postMessage({
             channel: channelId,
             text: text.slice(i, i + MAX_MESSAGE_LENGTH),
+            ...(options?.thread_ts && { thread_ts: options.thread_ts }),
           });
         }
       }
       logger.info({ jid, length: text.length }, 'Slack message sent');
     } catch (err) {
-      this.outgoingQueue.push({ jid, text });
+      this.outgoingQueue.push({ jid, text, options });
       logger.warn(
         { jid, err, queueSize: this.outgoingQueue.length },
         'Failed to send Slack message, queued',
@@ -245,9 +265,7 @@ export class SlackChannel implements Channel {
     }
   }
 
-  private async resolveUserName(
-    userId: string,
-  ): Promise<string | undefined> {
+  private async resolveUserName(userId: string): Promise<string | undefined> {
     if (!userId) return undefined;
 
     const cached = this.userNameCache.get(userId);
@@ -278,6 +296,8 @@ export class SlackChannel implements Channel {
         await this.app.client.chat.postMessage({
           channel: channelId,
           text: item.text,
+          ...(item.options?.thread_ts && { thread_ts: item.options.thread_ts }),
+          ...(item.options?.blocks && { blocks: item.options.blocks as any[] }), // eslint-disable-line @typescript-eslint/no-explicit-any
         });
         logger.info(
           { jid: item.jid, length: item.text.length },

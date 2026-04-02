@@ -132,7 +132,9 @@ function currentApp() {
   return appRef.current;
 }
 
-async function triggerMessageEvent(event: ReturnType<typeof createMessageEvent>) {
+async function triggerMessageEvent(
+  event: ReturnType<typeof createMessageEvent>,
+) {
   const handler = currentApp().eventHandlers.get('message');
   if (handler) await handler({ event });
 }
@@ -309,7 +311,10 @@ describe('SlackChannel', () => {
       const channel = new SlackChannel(opts);
       await channel.connect();
 
-      const event = createMessageEvent({ user: 'U_BOT_123', text: 'Self message' });
+      const event = createMessageEvent({
+        user: 'U_BOT_123',
+        text: 'Self message',
+      });
       await triggerMessageEvent(event);
 
       expect(opts.onMessage).toHaveBeenCalledWith(
@@ -391,13 +396,17 @@ describe('SlackChannel', () => {
       await channel.connect();
 
       // First message — API call
-      await triggerMessageEvent(createMessageEvent({ user: 'U_USER_456', text: 'First' }));
+      await triggerMessageEvent(
+        createMessageEvent({ user: 'U_USER_456', text: 'First' }),
+      );
       // Second message — should use cache
-      await triggerMessageEvent(createMessageEvent({
-        user: 'U_USER_456',
-        text: 'Second',
-        ts: '1704067201.000000',
-      }));
+      await triggerMessageEvent(
+        createMessageEvent({
+          user: 'U_USER_456',
+          text: 'Second',
+          ts: '1704067201.000000',
+        }),
+      );
 
       expect(currentApp().client.users.info).toHaveBeenCalledTimes(1);
     });
@@ -407,7 +416,9 @@ describe('SlackChannel', () => {
       const channel = new SlackChannel(opts);
       await channel.connect();
 
-      currentApp().client.users.info.mockRejectedValueOnce(new Error('API error'));
+      currentApp().client.users.info.mockRejectedValueOnce(
+        new Error('API error'),
+      );
 
       const event = createMessageEvent({ user: 'U_UNKNOWN', text: 'Hi' });
       await triggerMessageEvent(event);
@@ -420,7 +431,7 @@ describe('SlackChannel', () => {
       );
     });
 
-    it('flattens threaded replies into channel messages', async () => {
+    it('propagates thread_ts from threaded reply to NewMessage', async () => {
       const opts = createTestOpts();
       const channel = new SlackChannel(opts);
       await channel.connect();
@@ -432,16 +443,30 @@ describe('SlackChannel', () => {
       });
       await triggerMessageEvent(event);
 
-      // Threaded replies are delivered as regular channel messages
       expect(opts.onMessage).toHaveBeenCalledWith(
         'slack:C0123456789',
         expect.objectContaining({
           content: 'Thread reply',
+          thread_ts: '1704067200.000000',
         }),
       );
     });
 
-    it('delivers thread parent messages normally', async () => {
+    it('uses msg.ts as thread_ts for channel-level @mention', async () => {
+      const opts = createTestOpts();
+      const channel = new SlackChannel(opts);
+      await channel.connect();
+
+      const event = createMessageEvent({ ts: '1704067200.000000' }); // no threadTs
+      await triggerMessageEvent(event);
+
+      expect(opts.onMessage).toHaveBeenCalledWith(
+        'slack:C0123456789',
+        expect.objectContaining({ thread_ts: '1704067200.000000' }),
+      );
+    });
+
+    it('delivers thread parent messages with thread_ts', async () => {
       const opts = createTestOpts();
       const channel = new SlackChannel(opts);
       await channel.connect();
@@ -457,19 +482,28 @@ describe('SlackChannel', () => {
         'slack:C0123456789',
         expect.objectContaining({
           content: 'Thread parent',
+          thread_ts: '1704067200.000000',
         }),
       );
     });
 
-    it('delivers messages without thread_ts normally', async () => {
+    it('delivers messages without thread_ts using msg.ts', async () => {
       const opts = createTestOpts();
       const channel = new SlackChannel(opts);
       await channel.connect();
 
-      const event = createMessageEvent({ text: 'Normal message' });
+      const event = createMessageEvent({
+        text: 'Normal message',
+        ts: '1704067200.000000',
+      });
       await triggerMessageEvent(event);
 
-      expect(opts.onMessage).toHaveBeenCalled();
+      expect(opts.onMessage).toHaveBeenCalledWith(
+        'slack:C0123456789',
+        expect.objectContaining({
+          thread_ts: '1704067200.000000',
+        }),
+      );
     });
   });
 
@@ -681,6 +715,70 @@ describe('SlackChannel', () => {
         text: 'Second queued',
       });
     });
+
+    it('sends message with thread_ts when options provided', async () => {
+      const opts = createTestOpts();
+      const channel = new SlackChannel(opts);
+      await channel.connect();
+
+      await channel.sendMessage('slack:C0123456789', 'Reply', {
+        thread_ts: '1704067200.000000',
+      });
+
+      expect(currentApp().client.chat.postMessage).toHaveBeenCalledWith({
+        channel: 'C0123456789',
+        text: 'Reply',
+        thread_ts: '1704067200.000000',
+      });
+    });
+
+    it('sends message without options as before (backward compat)', async () => {
+      const opts = createTestOpts();
+      const channel = new SlackChannel(opts);
+      await channel.connect();
+
+      await channel.sendMessage('slack:C0123456789', 'Plain message');
+
+      expect(currentApp().client.chat.postMessage).toHaveBeenCalledWith({
+        channel: 'C0123456789',
+        text: 'Plain message',
+      });
+    });
+
+    it('preserves options in outgoing queue', async () => {
+      const opts = createTestOpts();
+      const channel = new SlackChannel(opts);
+
+      // Don't connect -- will queue
+      await channel.sendMessage('slack:C0123456789', 'Queued', {
+        thread_ts: '123.456',
+      });
+
+      // Connect triggers flush
+      await channel.connect();
+
+      expect(currentApp().client.chat.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ thread_ts: '123.456' }),
+      );
+    });
+
+    it('does not split messages when blocks are provided', async () => {
+      const opts = createTestOpts();
+      const channel = new SlackChannel(opts);
+      await channel.connect();
+
+      const blocks = [
+        { type: 'section', text: { type: 'mrkdwn', text: 'Hello' } },
+      ];
+      await channel.sendMessage('slack:C0123456789', 'A'.repeat(5000), {
+        blocks,
+      });
+
+      expect(currentApp().client.chat.postMessage).toHaveBeenCalledTimes(1);
+      expect(currentApp().client.chat.postMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ blocks }),
+      );
+    });
   });
 
   // --- ownsJid ---
@@ -812,17 +910,13 @@ describe('SlackChannel', () => {
       const channel = new SlackChannel(opts);
 
       // First page returns a cursor; second page returns no cursor
-      currentApp().client.conversations.list
-        .mockResolvedValueOnce({
-          channels: [
-            { id: 'C001', name: 'general', is_member: true },
-          ],
+      currentApp()
+        .client.conversations.list.mockResolvedValueOnce({
+          channels: [{ id: 'C001', name: 'general', is_member: true }],
           response_metadata: { next_cursor: 'cursor_page2' },
         })
         .mockResolvedValueOnce({
-          channels: [
-            { id: 'C002', name: 'random', is_member: true },
-          ],
+          channels: [{ id: 'C002', name: 'random', is_member: true }],
           response_metadata: {},
         });
 
@@ -830,7 +924,8 @@ describe('SlackChannel', () => {
 
       // Should have called conversations.list twice (once per page)
       expect(currentApp().client.conversations.list).toHaveBeenCalledTimes(2);
-      expect(currentApp().client.conversations.list).toHaveBeenNthCalledWith(2,
+      expect(currentApp().client.conversations.list).toHaveBeenNthCalledWith(
+        2,
         expect.objectContaining({ cursor: 'cursor_page2' }),
       );
 
