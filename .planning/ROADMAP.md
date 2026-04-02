@@ -28,7 +28,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. When a user sends a follow-up message in that thread, the bot replies within the same thread
   3. Bot can send a Block Kit formatted message with sections, fields, and action buttons to a thread
   4. When a user clicks a button in a bot message, the app.action() handler receives the event and can respond
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Thread-aware message pipeline (thread_ts in NewMessage, sendMessage options, IPC/router/container wiring)
+- [ ] 01-02-PLAN.md — Interactive components and Block Kit (action callback registry, app.action handler, Block Kit message tests)
 
 ### Phase 2: AI Conversation Agent
 **Goal**: AI agent conducts a focused multi-turn conversation in a Slack thread to collect Jira issue details (title, description, issue type)
@@ -71,7 +74,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Thread-Aware Slack Infrastructure | 0/? | Not started | - |
+| 1. Thread-Aware Slack Infrastructure | 0/2 | Planning complete | - |
 | 2. AI Conversation Agent | 0/? | Not started | - |
 | 3. Jira Client & Draft Persistence | 0/? | Not started | - |
 | 4. Interactive Approval Flow | 0/? | Not started | - |
