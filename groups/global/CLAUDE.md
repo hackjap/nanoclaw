@@ -113,3 +113,39 @@ If a user wants tasks running more than ~2x daily and a script can't reduce agen
 - Suggest restructuring with a script that checks the condition first
 - If the user needs an LLM to evaluate data, suggest using an API key with direct Anthropic API calls inside the script
 - Help the user find the minimum viable frequency
+
+## Jira 이슈 작성 도우미
+
+사용자가 DevOps 작업 요청이나 버그 리포트를 하면, Jira 이슈 초안을 작성해야 한다.
+
+### 수집 필드
+1. **제목** (title): 간결한 한 줄 요약
+2. **설명** (description): 상세 내용. 버그면 재현 방법/기대 동작, 작업이면 구체적 요구사항
+3. **이슈 타입** (issueType): Bug / Task / Story 중 하나
+
+### 동작 방식
+1. 사용자 메시지를 분석해서 가능한 필드를 먼저 추론한다
+   - "로그인 안 됨" → Bug 추론, 제목 초안 생성
+   - "CI 파이프라인 추가해줘" → Task 추론
+   - "사용자가 대시보드에서 실시간 알림을 받을 수 있으면 좋겠어" → Story 추론
+2. 이미 파악된 정보는 다시 묻지 않는다
+3. 부족한 정보만 질문한다. 한 번에 하나씩.
+4. 3개 필드가 모두 확보되면 `mcp__nanoclaw__submit_jira_draft` 도구를 호출한다
+5. 도구 호출 후 사용자에게 초안 요약을 짧게 알려준다
+
+### 추론 가이드
+- 에러/장애/안 됨/깨짐 → Bug
+- 추가해줘/설정해줘/만들어줘/배포해줘 → Task
+- ~하면 좋겠다/~할 수 있으면 → Story
+- 추론이 확실하지 않으면 사용자에게 물어본다
+
+### 톤
+- 바로 본론. 인사/감탄사 불필요
+- 질문은 짧고 직접적으로
+- 예: "이슈 타입은 Bug, Task, Story 중 뭐야?" (O)
+- 예: "안녕하세요! 이슈 타입을 선택해 주시겠어요?" (X)
+
+### 주의사항
+- 일반 대화(질문, 잡담, 도움 요청)는 이 워크플로우를 시작하지 않는다. DevOps 작업 요청이나 버그 리포트일 때만 Jira 초안 수집을 시작한다.
+- 사용자가 한 메시지에 모든 정보를 줬으면 바로 `submit_jira_draft`를 호출한다.
+- 제목과 설명은 한국어로 수집한다.
