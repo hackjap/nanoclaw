@@ -148,6 +148,44 @@ export function startIpcWatcher(deps: IpcDeps): void {
       } catch (err) {
         logger.error({ err, sourceGroup }, 'Error reading IPC tasks directory');
       }
+
+      // Process actions from this group's IPC directory
+      const actionsDir = path.join(ipcBaseDir, sourceGroup, 'actions');
+      try {
+        if (fs.existsSync(actionsDir)) {
+          const actionFiles = fs
+            .readdirSync(actionsDir)
+            .filter((f) => f.endsWith('.json'));
+          for (const file of actionFiles) {
+            const filePath = path.join(actionsDir, file);
+            try {
+              const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+              logger.info(
+                { type: data.type, sourceGroup, file },
+                'IPC action received',
+              );
+              // Phase 2: log and remove. Phase 3/4 will add domain-specific handlers.
+              fs.unlinkSync(filePath);
+            } catch (err) {
+              logger.error(
+                { file, sourceGroup, err },
+                'Error processing IPC action',
+              );
+              const errorDir = path.join(ipcBaseDir, 'errors');
+              fs.mkdirSync(errorDir, { recursive: true });
+              fs.renameSync(
+                filePath,
+                path.join(errorDir, `${sourceGroup}-${file}`),
+              );
+            }
+          }
+        }
+      } catch (err) {
+        logger.error(
+          { err, sourceGroup },
+          'Error reading IPC actions directory',
+        );
+      }
     }
 
     setTimeout(processIpcFiles, IPC_POLL_INTERVAL);
