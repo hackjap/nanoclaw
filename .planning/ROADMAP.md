@@ -12,8 +12,8 @@ This roadmap delivers a conversational Slack bot that transforms DevOps work req
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [x] **Phase 1: Thread-Aware Slack Infrastructure** - Enable threaded conversation, interactive components, and Block Kit messaging (completed 2026-04-02)
-- [x] **Phase 2: AI Conversation Agent** - Container agent collects Jira issue details through multi-turn thread dialogue (completed 2026-04-02)
+- [ ] **Phase 1: Thread-Aware Slack Infrastructure** - Enable threaded conversation, interactive components, and Block Kit messaging
+- [ ] **Phase 2: AI Conversation Agent** - Container agent collects Jira issue details through multi-turn thread dialogue
 - [ ] **Phase 3: Jira Client & Draft Persistence** - Connect to Jira API, store drafts in SQLite, handle API errors
 - [ ] **Phase 4: Interactive Approval Flow** - Block Kit previews with approve/edit buttons, emoji trigger, confirmation, and error feedback
 
@@ -42,10 +42,7 @@ Plans:
   1. When a user @mentions the bot with a work request, the AI agent asks clarifying questions in the thread to gather missing information
   2. The AI agent collects at minimum a title, description, and issue type (Bug/Task/Story) through conversation
   3. When sufficient information is collected, the container outputs a structured draft JSON via IPC actions directory
-**Plans:** 2/2 plans complete
-Plans:
-- [x] 02-01-PLAN.md — IPC actions/ infrastructure (submit_jira_draft MCP tool, actions/ directory creation, orchestrator polling, thread_ts env)
-- [x] 02-02-PLAN.md — Agent prompt and end-to-end verification (CLAUDE.md Jira collection instructions, Slack integration test)
+**Plans**: TBD
 
 ### Phase 3: Jira Client & Draft Persistence
 **Goal**: System can create Jira issues via API and persist draft data across container lifecycle boundaries
@@ -56,10 +53,7 @@ Plans:
   2. Jira credentials (host, email, API token, project key) are managed through the credential proxy -- never hardcoded or passed to containers
   3. Draft data received from the container is persisted in SQLite keyed by thread_ts and survives process restarts
   4. When Jira API call fails, the error is caught and a user-friendly message is posted to the thread explaining what went wrong
-**Plans:** 2 plans
-Plans:
-- [ ] 03-01-PLAN.md — Jira client module (jira.js Version3Client, ADF builder, error classification with Korean messages)
-- [ ] 03-02-PLAN.md — Draft persistence and IPC wiring (jira_drafts SQLite table, CRUD functions, IPC actions handler)
+**Plans**: TBD
 
 ### Phase 4: Interactive Approval Flow
 **Goal**: Users see a rich preview of the Jira draft and can approve, edit, or trigger creation via emoji -- with confirmation and error feedback for every action
@@ -81,7 +75,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Thread-Aware Slack Infrastructure | 3/3 | Complete   | 2026-04-02 |
-| 2. AI Conversation Agent | 2/2 | Complete   | 2026-04-02 |
-| 3. Jira Client & Draft Persistence | 0/2 | In progress | - |
+| 1. Thread-Aware Slack Infrastructure | 0/3 | Gap closure planned | - |
+| 2. AI Conversation Agent | 0/? | Not started | - |
+| 3. Jira Client & Draft Persistence | 1/2 | In progress | - |
 | 4. Interactive Approval Flow | 0/? | Not started | - |
