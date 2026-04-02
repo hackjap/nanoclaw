@@ -12,7 +12,7 @@ This roadmap delivers a conversational Slack bot that transforms DevOps work req
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Thread-Aware Slack Infrastructure** - Enable threaded conversation, interactive components, and Block Kit messaging
+- [x] **Phase 1: Thread-Aware Slack Infrastructure** - Enable threaded conversation, interactive components, and Block Kit messaging (completed 2026-04-02)
 - [x] **Phase 2: AI Conversation Agent** - Container agent collects Jira issue details through multi-turn thread dialogue (completed 2026-04-02)
 - [ ] **Phase 3: Jira Client & Draft Persistence** - Connect to Jira API, store drafts in SQLite, handle API errors
 - [ ] **Phase 4: Interactive Approval Flow** - Block Kit previews with approve/edit buttons, emoji trigger, confirmation, and error feedback
@@ -78,7 +78,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Thread-Aware Slack Infrastructure | 0/3 | Gap closure planned | - |
+| 1. Thread-Aware Slack Infrastructure | 3/3 | Complete   | 2026-04-02 |
 | 2. AI Conversation Agent | 2/2 | Complete   | 2026-04-02 |
 | 3. Jira Client & Draft Persistence | 0/? | Not started | - |
 | 4. Interactive Approval Flow | 0/? | Not started | - |
