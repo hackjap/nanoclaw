@@ -51,6 +51,12 @@ export interface NewMessage {
   timestamp: string;
   is_from_me?: boolean;
   is_bot_message?: boolean;
+  thread_ts?: string;
+}
+
+export interface SendMessageOptions {
+  thread_ts?: string;
+  blocks?: unknown[]; // Block Kit blocks -- typed as unknown[] for now; Phase 2 Plan 02 will use @slack/types Block
 }
 
 export interface ScheduledTask {
@@ -82,7 +88,7 @@ export interface TaskRunLog {
 export interface Channel {
   name: string;
   connect(): Promise<void>;
-  sendMessage(jid: string, text: string): Promise<void>;
+  sendMessage(jid: string, text: string, options?: SendMessageOptions): Promise<void>;
   isConnected(): boolean;
   ownsJid(jid: string): boolean;
   disconnect(): Promise<void>;
