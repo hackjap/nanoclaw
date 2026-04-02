@@ -56,7 +56,10 @@ Plans:
   2. Jira credentials (host, email, API token, project key) are managed through the credential proxy -- never hardcoded or passed to containers
   3. Draft data received from the container is persisted in SQLite keyed by thread_ts and survives process restarts
   4. When Jira API call fails, the error is caught and a user-friendly message is posted to the thread explaining what went wrong
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 03-01-PLAN.md — Jira client module (jira.js Version3Client, ADF builder, error classification with Korean messages)
+- [ ] 03-02-PLAN.md — Draft persistence and IPC wiring (jira_drafts SQLite table, CRUD functions, IPC actions handler)
 
 ### Phase 4: Interactive Approval Flow
 **Goal**: Users see a rich preview of the Jira draft and can approve, edit, or trigger creation via emoji -- with confirmation and error feedback for every action
@@ -80,5 +83,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 |-------|----------------|--------|-----------|
 | 1. Thread-Aware Slack Infrastructure | 3/3 | Complete   | 2026-04-02 |
 | 2. AI Conversation Agent | 2/2 | Complete   | 2026-04-02 |
-| 3. Jira Client & Draft Persistence | 0/? | Not started | - |
+| 3. Jira Client & Draft Persistence | 0/2 | In progress | - |
 | 4. Interactive Approval Flow | 0/? | Not started | - |
