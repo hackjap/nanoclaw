@@ -72,31 +72,31 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SLCK-01 | — | Pending |
-| SLCK-02 | — | Pending |
-| SLCK-03 | — | Pending |
-| SLCK-04 | — | Pending |
-| SLCK-05 | — | Pending |
-| CONV-01 | — | Pending |
-| CONV-02 | — | Pending |
-| CONV-03 | — | Pending |
-| JIRA-01 | — | Pending |
-| JIRA-02 | — | Pending |
-| JIRA-03 | — | Pending |
-| DRFT-01 | — | Pending |
-| DRFT-02 | — | Pending |
-| DRFT-03 | — | Pending |
-| DRFT-04 | — | Pending |
-| DRFT-05 | — | Pending |
-| NOTF-01 | — | Pending |
-| ERRH-01 | — | Pending |
-| ERRH-02 | — | Pending |
+| SLCK-01 | Phase 1 | Pending |
+| SLCK-02 | Phase 1 | Pending |
+| SLCK-03 | Phase 1 | Pending |
+| SLCK-04 | Phase 1 | Pending |
+| SLCK-05 | Phase 4 | Pending |
+| CONV-01 | Phase 2 | Pending |
+| CONV-02 | Phase 2 | Pending |
+| CONV-03 | Phase 2 | Pending |
+| JIRA-01 | Phase 3 | Pending |
+| JIRA-02 | Phase 3 | Pending |
+| JIRA-03 | Phase 3 | Pending |
+| DRFT-01 | Phase 4 | Pending |
+| DRFT-02 | Phase 4 | Pending |
+| DRFT-03 | Phase 4 | Pending |
+| DRFT-04 | Phase 4 | Pending |
+| DRFT-05 | Phase 3 | Pending |
+| NOTF-01 | Phase 4 | Pending |
+| ERRH-01 | Phase 3 | Pending |
+| ERRH-02 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 19 total
-- Mapped to phases: 0
-- Unmapped: 19 ⚠️
+- Mapped to phases: 19
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-02*
-*Last updated: 2026-04-02 after initial definition*
+*Last updated: 2026-04-02 after roadmap creation*
