@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 2 plans
 Plans:
 - [x] 01-01-PLAN.md — Thread-aware message pipeline (thread_ts in NewMessage, sendMessage options, IPC/router/container wiring)
-- [ ] 01-02-PLAN.md — Interactive components and Block Kit (action callback registry, app.action handler, Block Kit message tests)
+- [x] 01-02-PLAN.md — Interactive components and Block Kit (action callback registry, app.action handler, Block Kit message tests)
 
 ### Phase 2: AI Conversation Agent
 **Goal**: AI agent conducts a focused multi-turn conversation in a Slack thread to collect Jira issue details (title, description, issue type)

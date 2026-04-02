@@ -9,8 +9,8 @@
 
 - [x] **SLCK-01**: 봇이 @멘션에 응답할 때 스레드에서 대화를 시작한다 (thread_ts 지원)
 - [x] **SLCK-02**: 봇이 스레드 내 후속 메시지에 스레드 답글로 응답한다
-- [ ] **SLCK-03**: Slack interactive components 인프라 구축 (app.action() 핸들러 등록)
-- [ ] **SLCK-04**: Block Kit 포맷으로 구조화된 메시지를 발송할 수 있다
+- [x] **SLCK-03**: Slack interactive components 인프라 구축 (app.action() 핸들러 등록)
+- [x] **SLCK-04**: Block Kit 포맷으로 구조화된 메시지를 발송할 수 있다
 - [ ] **SLCK-05**: 특정 이모지 리액션(:jira:)으로 해당 메시지 기반 티켓 생성을 시작한다
 
 ### AI Conversation
@@ -74,8 +74,8 @@
 |-------------|-------|--------|
 | SLCK-01 | Phase 1 | Complete |
 | SLCK-02 | Phase 1 | Complete |
-| SLCK-03 | Phase 1 | Pending |
-| SLCK-04 | Phase 1 | Pending |
+| SLCK-03 | Phase 1 | Complete |
+| SLCK-04 | Phase 1 | Complete |
 | SLCK-05 | Phase 4 | Pending |
 | CONV-01 | Phase 2 | Pending |
 | CONV-02 | Phase 2 | Pending |
