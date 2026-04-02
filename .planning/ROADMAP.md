@@ -13,7 +13,7 @@ This roadmap delivers a conversational Slack bot that transforms DevOps work req
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Thread-Aware Slack Infrastructure** - Enable threaded conversation, interactive components, and Block Kit messaging
-- [ ] **Phase 2: AI Conversation Agent** - Container agent collects Jira issue details through multi-turn thread dialogue
+- [x] **Phase 2: AI Conversation Agent** - Container agent collects Jira issue details through multi-turn thread dialogue (completed 2026-04-02)
 - [ ] **Phase 3: Jira Client & Draft Persistence** - Connect to Jira API, store drafts in SQLite, handle API errors
 - [ ] **Phase 4: Interactive Approval Flow** - Block Kit previews with approve/edit buttons, emoji trigger, confirmation, and error feedback
 
@@ -42,10 +42,10 @@ Plans:
   1. When a user @mentions the bot with a work request, the AI agent asks clarifying questions in the thread to gather missing information
   2. The AI agent collects at minimum a title, description, and issue type (Bug/Task/Story) through conversation
   3. When sufficient information is collected, the container outputs a structured draft JSON via IPC actions directory
-**Plans:** 0/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 02-01-PLAN.md — IPC actions/ infrastructure (submit_jira_draft MCP tool, actions/ directory creation, orchestrator polling, thread_ts env)
-- [ ] 02-02-PLAN.md — Agent prompt and end-to-end verification (CLAUDE.md Jira collection instructions, Slack integration test)
+- [x] 02-01-PLAN.md — IPC actions/ infrastructure (submit_jira_draft MCP tool, actions/ directory creation, orchestrator polling, thread_ts env)
+- [x] 02-02-PLAN.md — Agent prompt and end-to-end verification (CLAUDE.md Jira collection instructions, Slack integration test)
 
 ### Phase 3: Jira Client & Draft Persistence
 **Goal**: System can create Jira issues via API and persist draft data across container lifecycle boundaries
@@ -79,6 +79,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Thread-Aware Slack Infrastructure | 0/3 | Gap closure planned | - |
-| 2. AI Conversation Agent | 0/2 | Planned    |  |
+| 2. AI Conversation Agent | 2/2 | Complete   | 2026-04-02 |
 | 3. Jira Client & Draft Persistence | 0/? | Not started | - |
 | 4. Interactive Approval Flow | 0/? | Not started | - |
