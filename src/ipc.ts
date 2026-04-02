@@ -8,10 +8,10 @@ import { AvailableGroup } from './container-runner.js';
 import { createTask, deleteTask, getTaskById, updateTask } from './db.js';
 import { isValidGroupFolder } from './group-folder.js';
 import { logger } from './logger.js';
-import { RegisteredGroup } from './types.js';
+import { RegisteredGroup, SendMessageOptions } from './types.js';
 
 export interface IpcDeps {
-  sendMessage: (jid: string, text: string) => Promise<void>;
+  sendMessage: (jid: string, text: string, options?: SendMessageOptions) => Promise<void>;
   registeredGroups: () => Record<string, RegisteredGroup>;
   registerGroup: (jid: string, group: RegisteredGroup) => void;
   syncGroups: (force: boolean) => Promise<void>;
@@ -80,7 +80,10 @@ export function startIpcWatcher(deps: IpcDeps): void {
                   isMain ||
                   (targetGroup && targetGroup.folder === sourceGroup)
                 ) {
-                  await deps.sendMessage(data.chatJid, data.text);
+                  const options: SendMessageOptions | undefined = data.thread_ts
+                    ? { thread_ts: data.thread_ts }
+                    : undefined;
+                  await deps.sendMessage(data.chatJid, data.text, options);
                   logger.info(
                     { chatJid: data.chatJid, sourceGroup },
                     'IPC message sent',

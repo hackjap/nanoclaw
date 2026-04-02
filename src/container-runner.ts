@@ -41,6 +41,7 @@ export interface ContainerInput {
   isMain: boolean;
   isScheduledTask?: boolean;
   assistantName?: string;
+  thread_ts?: string;
 }
 
 export interface ContainerOutput {

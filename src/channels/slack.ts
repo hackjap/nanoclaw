@@ -170,28 +170,35 @@ export class SlackChannel implements Channel {
     }
 
     try {
-      const params: Record<string, unknown> = { channel: channelId, text };
-      if (options?.thread_ts) params.thread_ts = options.thread_ts;
+      // Build base params with optional thread_ts and blocks.
+      // Cast needed because ChatPostMessageArguments is a complex discriminated union
+      // that doesn't accept dynamic property assignment cleanly.
+      const baseParams = {
+        channel: channelId,
+        text,
+        ...(options?.thread_ts && { thread_ts: options.thread_ts }),
+      };
 
       if (options?.blocks) {
-        params.blocks = options.blocks;
         // Don't split Block Kit messages -- send as-is
-        await this.app.client.chat.postMessage(params);
+        await this.app.client.chat.postMessage({
+          ...baseParams,
+          blocks: options.blocks as any[], // eslint-disable-line @typescript-eslint/no-explicit-any
+        });
         logger.info({ jid, length: text.length }, 'Slack message sent');
         return;
       }
 
       // Slack limits messages to ~4000 characters; split if needed
       if (text.length <= MAX_MESSAGE_LENGTH) {
-        await this.app.client.chat.postMessage(params);
+        await this.app.client.chat.postMessage(baseParams);
       } else {
         for (let i = 0; i < text.length; i += MAX_MESSAGE_LENGTH) {
-          const chunkParams: Record<string, unknown> = {
+          await this.app.client.chat.postMessage({
             channel: channelId,
             text: text.slice(i, i + MAX_MESSAGE_LENGTH),
-          };
-          if (options?.thread_ts) chunkParams.thread_ts = options.thread_ts;
-          await this.app.client.chat.postMessage(chunkParams);
+            ...(options?.thread_ts && { thread_ts: options.thread_ts }),
+          });
         }
       }
       logger.info({ jid, length: text.length }, 'Slack message sent');
@@ -286,13 +293,12 @@ export class SlackChannel implements Channel {
       while (this.outgoingQueue.length > 0) {
         const item = this.outgoingQueue.shift()!;
         const channelId = item.jid.replace(/^slack:/, '');
-        const params: Record<string, unknown> = {
+        await this.app.client.chat.postMessage({
           channel: channelId,
           text: item.text,
-        };
-        if (item.options?.thread_ts) params.thread_ts = item.options.thread_ts;
-        if (item.options?.blocks) params.blocks = item.options.blocks;
-        await this.app.client.chat.postMessage(params);
+          ...(item.options?.thread_ts && { thread_ts: item.options.thread_ts }),
+          ...(item.options?.blocks && { blocks: item.options.blocks as any[] }), // eslint-disable-line @typescript-eslint/no-explicit-any
+        });
         logger.info(
           { jid: item.jid, length: item.text.length },
           'Queued Slack message sent',
