@@ -35,6 +35,7 @@ const appRef = vi.hoisted(() => ({ current: null as any }));
 vi.mock('@slack/bolt', () => ({
   App: class MockApp {
     eventHandlers = new Map<string, Handler>();
+    actionHandlers = new Map<string, Handler>();
     token: string;
     appToken: string;
 
@@ -66,6 +67,11 @@ vi.mock('@slack/bolt', () => ({
 
     event(name: string, handler: Handler) {
       this.eventHandlers.set(name, handler);
+    }
+
+    action(pattern: string | RegExp, handler: Handler) {
+      const key = pattern instanceof RegExp ? '*' : pattern;
+      this.actionHandlers.set(key, handler);
     }
 
     async start() {}
@@ -137,6 +143,17 @@ async function triggerMessageEvent(
 ) {
   const handler = currentApp().eventHandlers.get('message');
   if (handler) await handler({ event });
+}
+
+async function triggerActionEvent(actionId: string, value?: string) {
+  const handler = currentApp().actionHandlers.get('*');
+  if (!handler) throw new Error('No action handler registered');
+  const ack = vi.fn().mockResolvedValue(undefined);
+  const respond = vi.fn().mockResolvedValue(undefined);
+  const action = { action_id: actionId, type: 'button', value: value || '' };
+  const body = { user: { id: 'U_USER_456' }, channel: { id: 'C0123456789' } };
+  await handler({ action, ack, body, respond });
+  return { ack, respond };
 }
 
 // --- Tests ---
@@ -932,6 +949,148 @@ describe('SlackChannel', () => {
       // Both channels from both pages stored
       expect(updateChatName).toHaveBeenCalledWith('slack:C001', 'general');
       expect(updateChatName).toHaveBeenCalledWith('slack:C002', 'random');
+    });
+  });
+
+  // --- Action handlers ---
+
+  describe('action handlers', () => {
+    it('registers catch-all action handler on construction', () => {
+      new SlackChannel(createTestOpts());
+      expect(currentApp().actionHandlers.has('*')).toBe(true);
+    });
+
+    it('routes action to registered handler by action_id', async () => {
+      const channel = new SlackChannel(createTestOpts());
+      const handler = vi.fn().mockResolvedValue(undefined);
+      channel.onAction('draft_approve', handler);
+      const { ack } = await triggerActionEvent(
+        'draft_approve',
+        '{"draftId":"123"}',
+      );
+      expect(ack).toHaveBeenCalled();
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: expect.objectContaining({ action_id: 'draft_approve' }),
+        }),
+      );
+    });
+
+    it('calls ack() before invoking handler', async () => {
+      const channel = new SlackChannel(createTestOpts());
+      const callOrder: string[] = [];
+      const handler = vi.fn().mockImplementation(async () => {
+        callOrder.push('handler');
+      });
+      channel.onAction('test_action', handler);
+
+      const customHandler = currentApp().actionHandlers.get('*')!;
+      const ack = vi.fn().mockImplementation(async () => {
+        callOrder.push('ack');
+      });
+      await customHandler({
+        action: { action_id: 'test_action', type: 'button', value: '' },
+        ack,
+        body: { user: { id: 'U1' } },
+        respond: vi.fn(),
+      });
+      expect(callOrder).toEqual(['ack', 'handler']);
+    });
+
+    it('logs warning for unregistered action_id', async () => {
+      new SlackChannel(createTestOpts());
+      const { ack } = await triggerActionEvent('unknown_action');
+      expect(ack).toHaveBeenCalled(); // Still acks
+    });
+
+    it('catches and logs handler errors', async () => {
+      const channel = new SlackChannel(createTestOpts());
+      channel.onAction('failing_action', async () => {
+        throw new Error('Handler boom');
+      });
+      // Should not throw
+      await expect(triggerActionEvent('failing_action')).resolves.toBeDefined();
+    });
+
+    it('routes multiple action_ids independently', async () => {
+      const channel = new SlackChannel(createTestOpts());
+      const approveHandler = vi.fn().mockResolvedValue(undefined);
+      const editHandler = vi.fn().mockResolvedValue(undefined);
+      channel.onAction('draft_approve', approveHandler);
+      channel.onAction('draft_edit', editHandler);
+
+      await triggerActionEvent('draft_approve');
+      expect(approveHandler).toHaveBeenCalled();
+      expect(editHandler).not.toHaveBeenCalled();
+
+      vi.clearAllMocks();
+      await triggerActionEvent('draft_edit');
+      expect(editHandler).toHaveBeenCalled();
+      expect(approveHandler).not.toHaveBeenCalled();
+    });
+  });
+
+  // --- Block Kit messages ---
+
+  describe('Block Kit messages', () => {
+    it('sends Block Kit message with sections and action buttons', async () => {
+      const opts = createTestOpts();
+      const channel = new SlackChannel(opts);
+      await channel.connect();
+
+      const blocks = [
+        {
+          type: 'section',
+          text: { type: 'mrkdwn', text: '*Draft Preview*\nTitle: Fix login bug' },
+        },
+        {
+          type: 'actions',
+          elements: [
+            {
+              type: 'button',
+              text: { type: 'plain_text', text: 'Approve' },
+              action_id: 'draft_approve',
+              style: 'primary',
+              value: JSON.stringify({ draftId: '123' }),
+            },
+            {
+              type: 'button',
+              text: { type: 'plain_text', text: 'Edit' },
+              action_id: 'draft_edit',
+              value: JSON.stringify({ draftId: '123' }),
+            },
+          ],
+        },
+      ];
+
+      await channel.sendMessage('slack:C0123456789', 'Draft Preview: Fix login bug', {
+        thread_ts: '1704067200.000000',
+        blocks,
+      });
+
+      expect(currentApp().client.chat.postMessage).toHaveBeenCalledWith({
+        channel: 'C0123456789',
+        text: 'Draft Preview: Fix login bug',
+        thread_ts: '1704067200.000000',
+        blocks,
+      });
+    });
+
+    it('sends text fallback alongside blocks for accessibility', async () => {
+      const opts = createTestOpts();
+      const channel = new SlackChannel(opts);
+      await channel.connect();
+
+      const blocks = [
+        { type: 'section', text: { type: 'mrkdwn', text: 'Hello' } },
+      ];
+      await channel.sendMessage('slack:C0123456789', 'Fallback text', {
+        blocks,
+      });
+
+      const call = currentApp().client.chat.postMessage.mock.calls[0][0];
+      expect(call.text).toBe('Fallback text');
+      expect(call.blocks).toBe(blocks);
     });
   });
 
