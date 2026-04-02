@@ -5,7 +5,7 @@ import { CronExpressionParser } from 'cron-parser';
 
 import { DATA_DIR, IPC_POLL_INTERVAL, TIMEZONE } from './config.js';
 import { AvailableGroup } from './container-runner.js';
-import { createTask, deleteTask, getTaskById, updateTask } from './db.js';
+import { createTask, deleteTask, getTaskById, saveDraft, updateTask } from './db.js';
 import { isValidGroupFolder } from './group-folder.js';
 import { logger } from './logger.js';
 import { RegisteredGroup, SendMessageOptions } from './types.js';
@@ -147,6 +147,50 @@ export function startIpcWatcher(deps: IpcDeps): void {
         }
       } catch (err) {
         logger.error({ err, sourceGroup }, 'Error reading IPC tasks directory');
+      }
+
+      // Process actions from this group's IPC directory
+      const actionsDir = path.join(ipcBaseDir, sourceGroup, 'actions');
+      try {
+        if (fs.existsSync(actionsDir)) {
+          const actionFiles = fs
+            .readdirSync(actionsDir)
+            .filter((f) => f.endsWith('.json'));
+          for (const file of actionFiles) {
+            const filePath = path.join(actionsDir, file);
+            try {
+              const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+              logger.info(
+                { type: data.type, sourceGroup, file },
+                'IPC action received',
+              );
+              if (data.type === 'jira_draft' && data.thread_ts && data.chatJid && data.draft) {
+                saveDraft(data.thread_ts, data.chatJid, data.draft);
+                logger.info(
+                  { thread_ts: data.thread_ts, sourceGroup },
+                  'Jira draft saved',
+                );
+              }
+              fs.unlinkSync(filePath);
+            } catch (err) {
+              logger.error(
+                { file, sourceGroup, err },
+                'Error processing IPC action',
+              );
+              const errorDir = path.join(ipcBaseDir, 'errors');
+              fs.mkdirSync(errorDir, { recursive: true });
+              fs.renameSync(
+                filePath,
+                path.join(errorDir, `${sourceGroup}-${file}`),
+              );
+            }
+          }
+        }
+      } catch (err) {
+        logger.error(
+          { err, sourceGroup },
+          'Error reading IPC actions directory',
+        );
       }
     }
 
