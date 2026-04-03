@@ -27,17 +27,17 @@
 
 ### Draft & Approval
 
-- [ ] **DRFT-01**: 수집된 정보로 Jira 초안 미리보기를 Block Kit 메시지로 스레드에 제시한다
-- [ ] **DRFT-02**: 미리보기에 승인/수정 버튼을 포함한다
-- [ ] **DRFT-03**: 승인 버튼 클릭 시 오케스트레이터가 Jira 이슈를 생성한다
-- [ ] **DRFT-04**: 수정 버튼 클릭 시 컨테이너 에이전트를 재호출하여 수정 대화를 시작한다
+- [x] **DRFT-01**: 수집된 정보로 Jira 초안 미리보기를 Block Kit 메시지로 스레드에 제시한다
+- [x] **DRFT-02**: 미리보기에 승인/수정 버튼을 포함한다
+- [x] **DRFT-03**: 승인 버튼 클릭 시 오케스트레이터가 Jira 이슈를 생성한다
+- [x] **DRFT-04**: 수정 버튼 클릭 시 컨테이너 에이전트를 재호출하여 수정 대화를 시작한다
 - [x] **DRFT-05**: 초안 데이터를 SQLite에 저장하여 비동기 버튼 클릭에 대응한다
 
 ### Notification & Error
 
-- [ ] **NOTF-01**: Jira 이슈 생성 후 스레드에 이슈 링크가 포함된 확인 답글을 게시한다
+- [x] **NOTF-01**: Jira 이슈 생성 후 스레드에 이슈 링크가 포함된 확인 답글을 게시한다
 - [x] **ERRH-01**: Jira API 실패 시 스레드에 사용자 친화적 에러 메시지를 표시한다
-- [ ] **ERRH-02**: Slack interactive component 에러 시 사용자에게 피드백을 제공한다
+- [x] **ERRH-02**: Slack interactive component 에러 시 사용자에게 피드백을 제공한다
 
 ## v2 Requirements
 
@@ -83,14 +83,14 @@
 | JIRA-01 | Phase 3 | Complete |
 | JIRA-02 | Phase 3 | Complete |
 | JIRA-03 | Phase 3 | Complete |
-| DRFT-01 | Phase 4 | Pending |
-| DRFT-02 | Phase 4 | Pending |
-| DRFT-03 | Phase 4 | Pending |
-| DRFT-04 | Phase 4 | Pending |
+| DRFT-01 | Phase 4 | Complete |
+| DRFT-02 | Phase 4 | Complete |
+| DRFT-03 | Phase 4 | Complete |
+| DRFT-04 | Phase 4 | Complete |
 | DRFT-05 | Phase 3 | Complete |
-| NOTF-01 | Phase 4 | Pending |
+| NOTF-01 | Phase 4 | Complete |
 | ERRH-01 | Phase 3 | Complete |
-| ERRH-02 | Phase 4 | Pending |
+| ERRH-02 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 19 total
