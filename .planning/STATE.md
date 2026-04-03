@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
+status: executing
 stopped_at: Phase 5 context gathered
-last_updated: "2026-04-03T08:47:16.535Z"
-last_activity: 2026-04-03
+last_updated: "2026-04-03T08:59:27.925Z"
+last_activity: 2026-04-03 -- Phase 05 execution started
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 4
-  total_plans: 9
+  total_plans: 11
   completed_plans: 9
   percent: 0
 ---
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** 요청자가 Slack에서 자연어로 DevOps 작업을 요청하면, AI 대화를 통해 구조화된 Jira 이슈가 생성되어야 한다.
-**Current focus:** Phase 03 — jira-client-draft-persistence
+**Current focus:** Phase 05 — bot-liveness-reactions
 
 ## Current Position
 
-Phase: 04
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-03
+Phase: 05 (bot-liveness-reactions) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 05
+Last activity: 2026-04-03 -- Phase 05 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -87,6 +87,7 @@ None yet.
 ### Roadmap Evolution
 
 - Phase 5 added: Bot Liveness Reactions — 봇이 메시지나 이모지 요청에 리액션으로 응답하여 정상 동작 여부 확인
+- Phase 6 added: Container Skill Architecture — 컨테이너 스킬 기반 Jira 에이전트, IPC에서 직접 호출로 전환
 
 ### Blockers/Concerns
 

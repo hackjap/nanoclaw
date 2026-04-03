@@ -94,3 +94,13 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 Plans:
 - [ ] 05-01-PLAN.md — StatusReaction state machine (TDD) + SlackChannel addReaction/removeReaction methods
 - [ ] 05-02-PLAN.md — Wire StatusReaction into orchestrator processGroupMessages and approval-flow handleJiraReaction
+
+### Phase 6: Container Skill Architecture — 컨테이너 스킬 기반으로 Jira 에이전트 구현. IPC 방식에서 스킬 직접 호출 방식으로 전환.
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 5
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 6 to break down)
