@@ -57,6 +57,10 @@ vi.mock('@slack/bolt', () => ({
           user: { real_name: 'Alice Smith', name: 'alice' },
         }),
       },
+      reactions: {
+        add: vi.fn().mockResolvedValue(undefined),
+        remove: vi.fn().mockResolvedValue(undefined),
+      },
     };
 
     constructor(opts: any) {
@@ -1091,6 +1095,92 @@ describe('SlackChannel', () => {
       const call = currentApp().client.chat.postMessage.mock.calls[0][0];
       expect(call.text).toBe('Fallback text');
       expect(call.blocks).toBe(blocks);
+    });
+  });
+
+  // --- Reaction methods ---
+
+  describe('addReaction', () => {
+    it('calls app.client.reactions.add with correct params', async () => {
+      const channel = new SlackChannel(createTestOpts());
+      await channel.addReaction('C0123456789', '1704067200.000000', 'eyes');
+
+      expect(currentApp().client.reactions.add).toHaveBeenCalledWith({
+        channel: 'C0123456789',
+        timestamp: '1704067200.000000',
+        name: 'eyes',
+      });
+    });
+
+    it('silently handles already_reacted error', async () => {
+      const channel = new SlackChannel(createTestOpts());
+      currentApp().client.reactions.add.mockRejectedValueOnce({
+        data: { error: 'already_reacted' },
+      });
+
+      // Should not throw
+      await expect(
+        channel.addReaction('C0123456789', '1704067200.000000', 'eyes'),
+      ).resolves.toBeUndefined();
+    });
+
+    it('logs warning on other errors without throwing', async () => {
+      const channel = new SlackChannel(createTestOpts());
+      currentApp().client.reactions.add.mockRejectedValueOnce(
+        new Error('rate_limited'),
+      );
+
+      await expect(
+        channel.addReaction('C0123456789', '1704067200.000000', 'eyes'),
+      ).resolves.toBeUndefined();
+
+      const { logger: mockLogger } = await import('../logger.js');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ emoji: 'eyes', err: expect.any(Error) }),
+        expect.any(String),
+      );
+    });
+  });
+
+  describe('removeReaction', () => {
+    it('calls app.client.reactions.remove with correct params', async () => {
+      const channel = new SlackChannel(createTestOpts());
+      await channel.removeReaction('C0123456789', '1704067200.000000', 'gear');
+
+      expect(currentApp().client.reactions.remove).toHaveBeenCalledWith({
+        channel: 'C0123456789',
+        timestamp: '1704067200.000000',
+        name: 'gear',
+      });
+    });
+
+    it('silently handles no_reaction error', async () => {
+      const channel = new SlackChannel(createTestOpts());
+      currentApp().client.reactions.remove.mockRejectedValueOnce({
+        data: { error: 'no_reaction' },
+      });
+
+      // Should not throw
+      await expect(
+        channel.removeReaction('C0123456789', '1704067200.000000', 'gear'),
+      ).resolves.toBeUndefined();
+    });
+
+    it('logs warning on other errors without throwing', async () => {
+      const channel = new SlackChannel(createTestOpts());
+      currentApp().client.reactions.remove.mockRejectedValueOnce(
+        new Error('channel_not_found'),
+      );
+
+      await expect(
+        channel.removeReaction('C0123456789', '1704067200.000000', 'gear'),
+      ).resolves.toBeUndefined();
+
+      const { logger: mockLogger } = await import('../logger.js');
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ emoji: 'gear', err: expect.any(Error) }),
+        expect.any(String),
+      );
     });
   });
 
