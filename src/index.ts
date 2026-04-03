@@ -44,10 +44,14 @@ import {
   setSession,
   storeChatMetadata,
   storeMessage,
+  getDraft,
+  updateDraftStatus,
 } from './db.js';
 import { GroupQueue } from './group-queue.js';
 import { resolveGroupFolderPath } from './group-folder.js';
-import { startIpcWatcher } from './ipc.js';
+import { setPreviewDeps, startIpcWatcher } from './ipc.js';
+import { initApprovalFlow } from './approval-flow.js';
+import { createJiraIssue } from './jira-client.js';
 import { findChannel, formatMessages, formatOutbound } from './router.js';
 import {
   restoreRemoteControl,
@@ -681,6 +685,39 @@ async function main(): Promise<void> {
   if (channels.length === 0) {
     logger.fatal('No channels connected');
     process.exit(1);
+  }
+
+  // Wire up approval flow on Slack channels
+  for (const ch of channels) {
+    if ('onAction' in ch && 'onReaction' in ch && 'updateMessage' in ch && 'sendBlockMessage' in ch && 'fetchMessage' in ch) {
+      const slackCh = ch as any;
+      initApprovalFlow(slackCh, {
+        getDraft,
+        updateDraftStatus,
+        createJiraIssue,
+        updateMessage: (channelId: string, ts: string, text: string, blocks: unknown[]) =>
+          slackCh.updateMessage(channelId, ts, text, blocks),
+        sendMessage: (jid: string, text: string, options?: any) =>
+          slackCh.sendMessage(jid, text, options),
+        editCallback: async (_chatJid: string, _threadTs: string, _draftData: any, _previewTs?: string) => {
+          logger.info('Edit callback triggered — re-invocation not yet wired');
+        },
+        fetchMessage: (channelId: string, ts: string) => slackCh.fetchMessage(channelId, ts),
+        enqueueForAgent: async (_channelId: string, _threadTs: string, _contextText: string) => {
+          logger.info('Emoji reaction agent enqueue — not yet wired');
+        },
+        addReaction: (channelId: string, ts: string, emoji: string) =>
+          slackCh.addReaction(channelId, ts, emoji),
+        removeReaction: (channelId: string, ts: string, emoji: string) =>
+          slackCh.removeReaction(channelId, ts, emoji),
+      });
+      setPreviewDeps({
+        sendBlockMessage: (jid: string, text: string, options: any) =>
+          slackCh.sendBlockMessage(jid, text, options),
+      });
+      logger.info('Approval flow wired on Slack channel');
+      break;
+    }
   }
 
   // Start subsystems (independently of connection handler)
