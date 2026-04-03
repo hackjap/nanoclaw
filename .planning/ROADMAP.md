@@ -16,6 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: AI Conversation Agent** - Container agent collects Jira issue details through multi-turn thread dialogue
 - [ ] **Phase 3: Jira Client & Draft Persistence** - Connect to Jira API, store drafts in SQLite, handle API errors
 - [ ] **Phase 4: Interactive Approval Flow** - Block Kit previews with approve/edit buttons, emoji trigger, confirmation, and error feedback
+- [ ] **Phase 5: Bot Liveness Reactions** - 메시지나 이모지 요청에 리액션으로 응답하여 봇 동작 상태 확인
 
 ## Phase Details
 
@@ -74,7 +75,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -82,3 +83,14 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 2. AI Conversation Agent | 0/? | Not started | - |
 | 3. Jira Client & Draft Persistence | 1/2 | In Progress|  |
 | 4. Interactive Approval Flow | 0/2 | Planned | - |
+| 5. Bot Liveness Reactions | 0/2 | Planned | - |
+
+### Phase 5: Bot Liveness Reactions
+**Goal:** 봇이 메시지나 이모지 요청에 리액션(이모지)으로 응답하여 정상 동작 여부를 즉시 확인할 수 있게 한다
+**Requirements**: D-01, D-02, D-03, D-04, D-05
+**Depends on:** Phase 4
+**Plans:** 2 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — StatusReaction state machine (TDD) + SlackChannel addReaction/removeReaction methods
+- [ ] 05-02-PLAN.md — Wire StatusReaction into orchestrator processGroupMessages and approval-flow handleJiraReaction
