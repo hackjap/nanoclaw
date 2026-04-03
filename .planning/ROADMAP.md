@@ -68,7 +68,7 @@ Plans:
 **Plans:** 2 plans
 Plans:
 - [x] 04-01-PLAN.md — Block Kit preview builder, approve/edit handlers, chat.update integration, IPC preview trigger
-- [ ] 04-02-PLAN.md — :jira: emoji reaction trigger with onReaction registry
+- [x] 04-02-PLAN.md — :jira: emoji reaction trigger with onReaction registry
 **UI hint**: yes
 
 ## Progress
