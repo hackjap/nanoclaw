@@ -65,7 +65,10 @@ Plans:
   3. Clicking Edit re-invokes the container agent with draft context so the user can modify specific fields through conversation
   4. Adding a :jira: emoji reaction to any message starts the ticket creation flow based on that message content
   5. When a Slack interactive component error occurs, the user receives clear feedback in the thread about what happened
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 04-01-PLAN.md — Block Kit preview builder, approve/edit handlers, chat.update integration, IPC preview trigger
+- [ ] 04-02-PLAN.md — :jira: emoji reaction trigger with onReaction registry
 **UI hint**: yes
 
 ## Progress
@@ -78,4 +81,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 | 1. Thread-Aware Slack Infrastructure | 0/3 | Gap closure planned | - |
 | 2. AI Conversation Agent | 0/? | Not started | - |
 | 3. Jira Client & Draft Persistence | 1/2 | In Progress|  |
-| 4. Interactive Approval Flow | 0/? | Not started | - |
+| 4. Interactive Approval Flow | 0/2 | Planned | - |
