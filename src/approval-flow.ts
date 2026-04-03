@@ -1,6 +1,7 @@
 import type { ActionPayload, ActionHandler, ReactionPayload, ReactionHandler } from './channels/slack.js';
 import type { JiraDraftData, JiraCreateResult, JiraError } from './jira-client.js';
 import type { JiraDraft, SendMessageOptions } from './types.js';
+import { StatusReaction } from './status-reactions.js';
 import { logger } from './logger.js';
 
 // --- Dependency interfaces ---
@@ -34,6 +35,9 @@ export interface PreviewDeps {
 export interface ReactionDeps {
   fetchMessage: (channelId: string, ts: string) => Promise<string | undefined>;
   enqueueForAgent: (channelId: string, threadTs: string, contextText: string) => Promise<void>;
+  addReaction: (channelId: string, ts: string, emoji: string) => Promise<void>;
+  removeReaction: (channelId: string, ts: string, emoji: string) => Promise<void>;
+  sendMessage: (jid: string, text: string, options?: SendMessageOptions) => Promise<void>;
 }
 
 export type FullDeps = ApprovalDeps & EditDeps & ReactionDeps;
@@ -193,19 +197,38 @@ export async function handleJiraReaction(
   deps: ReactionDeps,
 ): Promise<void> {
   const { event } = payload;
-  // D-05: :jira: emoji reaction extracts message content
   const channelId = event.item.channel;
   const messageTs = event.item.ts;
+
+  // Per D-02: all triggers get liveness reactions
+  const statusReaction = new StatusReaction(
+    { channel: channelId, timestamp: messageTs },
+    {
+      addReaction: (ch, ts, emoji) => deps.addReaction(ch, ts, emoji),
+      removeReaction: (ch, ts, emoji) => deps.removeReaction(ch, ts, emoji),
+      sendStatusMessage: (ch, ts, text) =>
+        deps.sendMessage(`slack:${ch}`, text, { thread_ts: ts }),
+    },
+  );
+
+  await statusReaction.received(); // eyes emoji immediately
 
   const messageText = await deps.fetchMessage(channelId, messageTs);
   if (!messageText) {
     logger.warn({ channelId, messageTs }, 'Could not fetch reacted-to message');
+    await statusReaction.failed(); // X emoji on fetch failure
     return;
   }
 
-  // D-05: Start AI conversation with message content as context (same as Phase 2 flow)
-  // D-06: No permission check -- open to all channel members in v1
-  await deps.enqueueForAgent(channelId, messageTs, messageText);
+  await statusReaction.processing(); // gear emoji before agent enqueue
+
+  try {
+    await deps.enqueueForAgent(channelId, messageTs, messageText);
+    await statusReaction.completed(); // checkmark after successful enqueue
+  } catch (err) {
+    logger.error({ channelId, messageTs, err }, 'Failed to enqueue for agent');
+    await statusReaction.failed(); // X on enqueue failure
+  }
 }
 
 // --- Initialization ---
