@@ -294,6 +294,9 @@ describe('handleJiraReaction', () => {
     deps = {
       fetchMessage: vi.fn(),
       enqueueForAgent: vi.fn().mockResolvedValue(undefined),
+      addReaction: vi.fn().mockResolvedValue(undefined),
+      removeReaction: vi.fn().mockResolvedValue(undefined),
+      sendMessage: vi.fn().mockResolvedValue(undefined),
     };
   });
 

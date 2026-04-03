@@ -79,11 +79,11 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Thread-Aware Slack Infrastructure | 0/3 | Gap closure planned | - |
+| 1. Thread-Aware Slack Infrastructure | 3/3 | Complete | 2026-04-02 |
 | 2. AI Conversation Agent | 0/? | Not started | - |
-| 3. Jira Client & Draft Persistence | 1/2 | In Progress|  |
-| 4. Interactive Approval Flow | 0/2 | Planned | - |
-| 5. Bot Liveness Reactions | 0/2 | Planned | - |
+| 3. Jira Client & Draft Persistence | 1/2 | In Progress |  |
+| 4. Interactive Approval Flow | 2/2 | Complete | - |
+| 5. Bot Liveness Reactions | 2/2 | Complete | 2026-04-03 |
 
 ### Phase 5: Bot Liveness Reactions
 **Goal:** 봇이 메시지나 이모지 요청에 리액션(이모지)으로 응답하여 정상 동작 여부를 즉시 확인할 수 있게 한다
@@ -92,8 +92,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 **Plans:** 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — StatusReaction state machine (TDD) + SlackChannel addReaction/removeReaction methods
-- [ ] 05-02-PLAN.md — Wire StatusReaction into orchestrator processGroupMessages and approval-flow handleJiraReaction
+- [x] 05-01-PLAN.md — StatusReaction state machine (TDD) + SlackChannel addReaction/removeReaction methods
+- [x] 05-02-PLAN.md — Wire StatusReaction into orchestrator processGroupMessages and approval-flow handleJiraReaction
 
 ### Phase 6: Container Skill Architecture — 컨테이너 스킬 기반으로 Jira 에이전트 구현. IPC 방식에서 스킬 직접 호출 방식으로 전환.
 
