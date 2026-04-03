@@ -6,8 +6,10 @@ import {
   handleDraftEdit,
   sendDraftPreview,
   initApprovalFlow,
+  handleJiraReaction,
 } from './approval-flow.js';
 import type { ActionPayload } from './channels/slack.js';
+import type { ReactionPayload } from './channels/slack.js';
 import type { JiraDraft } from './types.js';
 
 function makeDraftRow(overrides: Partial<JiraDraft> = {}): JiraDraft {
@@ -260,14 +262,77 @@ describe('sendDraftPreview', () => {
 });
 
 describe('initApprovalFlow', () => {
-  it('registers draft_approve and draft_edit handlers', () => {
+  it('registers draft_approve, draft_edit, and jira reaction handlers', () => {
     const onAction = vi.fn();
-    const channel = { onAction };
+    const onReaction = vi.fn();
+    const channel = { onAction, onReaction };
     const deps = {} as any;
 
     initApprovalFlow(channel, deps);
 
     expect(onAction).toHaveBeenCalledWith('draft_approve', expect.any(Function));
     expect(onAction).toHaveBeenCalledWith('draft_edit', expect.any(Function));
+    expect(onReaction).toHaveBeenCalledWith('jira', expect.any(Function));
+  });
+});
+
+describe('handleJiraReaction', () => {
+  function makeReactionPayload(overrides: Partial<ReactionPayload['event']> = {}): ReactionPayload {
+    return {
+      event: {
+        reaction: 'jira',
+        user: 'U123',
+        item: { type: 'message', channel: 'C123', ts: '1234.5678' },
+        ...overrides,
+      },
+    };
+  }
+
+  let deps: any;
+
+  beforeEach(() => {
+    deps = {
+      fetchMessage: vi.fn(),
+      enqueueForAgent: vi.fn().mockResolvedValue(undefined),
+    };
+  });
+
+  it('fetches message and enqueues for agent when reaction is jira on a message', async () => {
+    deps.fetchMessage.mockResolvedValue('Please deploy the new build');
+
+    await handleJiraReaction(makeReactionPayload(), deps);
+
+    expect(deps.fetchMessage).toHaveBeenCalledWith('C123', '1234.5678');
+    expect(deps.enqueueForAgent).toHaveBeenCalledWith(
+      'C123',
+      '1234.5678',
+      'Please deploy the new build',
+    );
+  });
+
+  it('does NOT call enqueueForAgent when fetchMessage returns undefined', async () => {
+    deps.fetchMessage.mockResolvedValue(undefined);
+
+    await handleJiraReaction(makeReactionPayload(), deps);
+
+    expect(deps.fetchMessage).toHaveBeenCalledWith('C123', '1234.5678');
+    expect(deps.enqueueForAgent).not.toHaveBeenCalled();
+  });
+
+  it('passes correct channelId, messageTs, and messageText to enqueueForAgent', async () => {
+    deps.fetchMessage.mockResolvedValue('Specific message content');
+
+    await handleJiraReaction(
+      makeReactionPayload({
+        item: { type: 'message', channel: 'C999', ts: '9999.0001' },
+      }),
+      deps,
+    );
+
+    expect(deps.enqueueForAgent).toHaveBeenCalledWith(
+      'C999',
+      '9999.0001',
+      'Specific message content',
+    );
   });
 });
