@@ -237,6 +237,34 @@ export class SlackChannel implements Channel {
     }
   }
 
+  /** Add an emoji reaction to a message. Idempotent: already_reacted is not an error. */
+  async addReaction(channelId: string, ts: string, emoji: string): Promise<void> {
+    try {
+      await this.app.client.reactions.add({
+        channel: channelId,
+        timestamp: ts,
+        name: emoji,
+      });
+    } catch (err: unknown) {
+      if ((err as any)?.data?.error === 'already_reacted') return; // eslint-disable-line @typescript-eslint/no-explicit-any
+      logger.warn({ channelId, ts, emoji, err }, 'Failed to add reaction');
+    }
+  }
+
+  /** Remove an emoji reaction from a message. Idempotent: no_reaction is not an error. */
+  async removeReaction(channelId: string, ts: string, emoji: string): Promise<void> {
+    try {
+      await this.app.client.reactions.remove({
+        channel: channelId,
+        timestamp: ts,
+        name: emoji,
+      });
+    } catch (err: unknown) {
+      if ((err as any)?.data?.error === 'no_reaction') return; // eslint-disable-line @typescript-eslint/no-explicit-any
+      logger.warn({ channelId, ts, emoji, err }, 'Failed to remove reaction');
+    }
+  }
+
   isConnected(): boolean {
     return this.connected;
   }
