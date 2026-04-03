@@ -61,6 +61,7 @@ import {
   shouldDropMessage,
 } from './sender-allowlist.js';
 import { startSchedulerLoop } from './task-scheduler.js';
+import { StatusReaction } from './status-reactions.js';
 import { Channel, NewMessage, RegisteredGroup } from './types.js';
 import { logger } from './logger.js';
 
@@ -232,6 +233,22 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
   // so this always has a value for Slack messages.
   const threadTs = missedMessages[missedMessages.length - 1].thread_ts;
 
+  // Create StatusReaction only for Slack channels (per Pitfall 6 from RESEARCH.md)
+  let statusReaction: StatusReaction | null = null;
+  if (chatJid.startsWith('slack:') && threadTs && 'addReaction' in channel) {
+    const slackCh = channel as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    const channelId = chatJid.replace(/^slack:/, '');
+    statusReaction = new StatusReaction(
+      { channel: channelId, timestamp: threadTs },
+      {
+        addReaction: (ch, ts, emoji) => slackCh.addReaction(ch, ts, emoji),
+        removeReaction: (ch, ts, emoji) => slackCh.removeReaction(ch, ts, emoji),
+        sendStatusMessage: (ch, ts, text) =>
+          slackCh.sendMessage(`slack:${ch}`, text, { thread_ts: ts }),
+      },
+    );
+  }
+
   // Advance cursor so the piping path in startMessageLoop won't re-fetch
   // these messages. Save the old cursor so we can roll back on error.
   const previousCursor = lastAgentTimestamp[chatJid] || '';
@@ -258,6 +275,7 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
     }, IDLE_TIMEOUT);
   };
 
+  await statusReaction?.received();
   await channel.setTyping?.(chatJid, true);
   let hadError = false;
   let outputSentToUser = false;
@@ -275,6 +293,8 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
       if (text) {
         await channel.sendMessage(chatJid, text, threadTs ? { thread_ts: threadTs } : undefined);
         outputSentToUser = true;
+        // Transition to processing on first actual output (D-03)
+        await statusReaction?.processing();
       }
       // Only reset idle timer on actual results, not session-update markers (result: null)
       resetIdleTimer();
@@ -291,6 +311,13 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
 
   await channel.setTyping?.(chatJid, false);
   if (idleTimer) clearTimeout(idleTimer);
+
+  // Final emoji transition (D-03)
+  if (output === 'error' || hadError) {
+    await statusReaction?.failed();
+  } else {
+    await statusReaction?.completed();
+  }
 
   if (output === 'error' || hadError) {
     // If we already sent output to the user, don't roll back the cursor —
