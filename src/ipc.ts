@@ -9,6 +9,8 @@ import { createTask, deleteTask, getTaskById, saveDraft, updateTask } from './db
 import { isValidGroupFolder } from './group-folder.js';
 import { logger } from './logger.js';
 import { RegisteredGroup, SendMessageOptions } from './types.js';
+import { sendDraftPreview } from './approval-flow.js';
+import type { JiraDraftData } from './jira-client.js';
 
 export interface IpcDeps {
   sendMessage: (jid: string, text: string, options?: SendMessageOptions) => Promise<void>;
@@ -26,6 +28,22 @@ export interface IpcDeps {
 }
 
 let ipcWatcherRunning = false;
+
+/** Injectable deps for triggering Block Kit preview after draft save (Phase 4: DRFT-01). */
+let previewDeps: {
+  sendBlockMessage: (
+    jid: string,
+    text: string,
+    options: SendMessageOptions & { blocks: unknown[] },
+  ) => Promise<string | undefined>;
+} | null = null;
+
+/** Set the preview deps for IPC draft-save → Block Kit preview wiring. */
+export function setPreviewDeps(
+  deps: typeof previewDeps,
+): void {
+  previewDeps = deps;
+}
 
 export function startIpcWatcher(deps: IpcDeps): void {
   if (ipcWatcherRunning) {
@@ -170,6 +188,11 @@ export function startIpcWatcher(deps: IpcDeps): void {
                   { thread_ts: data.thread_ts, sourceGroup },
                   'Jira draft saved',
                 );
+                // Trigger Block Kit preview in thread (Phase 4: DRFT-01)
+                if (previewDeps) {
+                  const draftData = data.draft as JiraDraftData;
+                  await sendDraftPreview(data.thread_ts, data.chatJid, draftData, previewDeps);
+                }
               }
               fs.unlinkSync(filePath);
             } catch (err) {

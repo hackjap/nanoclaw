@@ -243,6 +243,59 @@ export class SlackChannel implements Channel {
     // no-op: Slack Bot API has no typing indicator endpoint
   }
 
+  /** Update an existing Slack message (used for replacing preview with success blocks). */
+  async updateMessage(channelId: string, ts: string, text: string, blocks?: unknown[]): Promise<void> {
+    try {
+      await this.app.client.chat.update({
+        channel: channelId,
+        ts,
+        text,
+        ...(blocks && { blocks: blocks as any[] }), // eslint-disable-line @typescript-eslint/no-explicit-any
+      });
+      logger.info({ channelId, ts }, 'Slack message updated');
+    } catch (err) {
+      logger.error({ channelId, ts, err }, 'Failed to update Slack message');
+    }
+  }
+
+  /** Send a Block Kit message and return the posted message ts. */
+  async sendBlockMessage(
+    jid: string,
+    text: string,
+    options: SendMessageOptions & { blocks: unknown[] },
+  ): Promise<string | undefined> {
+    const channelId = jid.replace(/^slack:/, '');
+    try {
+      const result = await this.app.client.chat.postMessage({
+        channel: channelId,
+        text,
+        blocks: options.blocks as any[], // eslint-disable-line @typescript-eslint/no-explicit-any
+        ...(options.thread_ts && { thread_ts: options.thread_ts }),
+      });
+      logger.info({ jid }, 'Slack block message sent');
+      return result.ts;
+    } catch (err) {
+      logger.error({ jid, err }, 'Failed to send Slack block message');
+      return undefined;
+    }
+  }
+
+  /** Fetch a single message by ts from a channel. */
+  async fetchMessage(channelId: string, ts: string): Promise<string | undefined> {
+    try {
+      const result = await this.app.client.conversations.history({
+        channel: channelId,
+        latest: ts,
+        inclusive: true,
+        limit: 1,
+      });
+      return result.messages?.[0]?.text;
+    } catch (err) {
+      logger.error({ channelId, ts, err }, 'Failed to fetch Slack message');
+      return undefined;
+    }
+  }
+
   /**
    * Register a handler for a Slack interactive component action by action_id.
    * The orchestrator calls this to wire up button click callbacks (per D-07).
