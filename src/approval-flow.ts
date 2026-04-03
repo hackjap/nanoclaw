@@ -1,4 +1,4 @@
-import type { ActionPayload, ActionHandler } from './channels/slack.js';
+import type { ActionPayload, ActionHandler, ReactionPayload, ReactionHandler } from './channels/slack.js';
 import type { JiraDraftData, JiraCreateResult, JiraError } from './jira-client.js';
 import type { JiraDraft, SendMessageOptions } from './types.js';
 import { logger } from './logger.js';
@@ -31,7 +31,12 @@ export interface PreviewDeps {
   ) => Promise<string | undefined>;
 }
 
-export type FullDeps = ApprovalDeps & EditDeps;
+export interface ReactionDeps {
+  fetchMessage: (channelId: string, ts: string) => Promise<string | undefined>;
+  enqueueForAgent: (channelId: string, threadTs: string, contextText: string) => Promise<void>;
+}
+
+export type FullDeps = ApprovalDeps & EditDeps & ReactionDeps;
 
 // --- Block Kit builders ---
 
@@ -180,13 +185,40 @@ export async function sendDraftPreview(
   });
 }
 
+// --- Reaction handler ---
+
+/** Handle :jira: emoji reaction: fetch reacted-to message and start AI conversation (D-05). */
+export async function handleJiraReaction(
+  payload: ReactionPayload,
+  deps: ReactionDeps,
+): Promise<void> {
+  const { event } = payload;
+  // D-05: :jira: emoji reaction extracts message content
+  const channelId = event.item.channel;
+  const messageTs = event.item.ts;
+
+  const messageText = await deps.fetchMessage(channelId, messageTs);
+  if (!messageText) {
+    logger.warn({ channelId, messageTs }, 'Could not fetch reacted-to message');
+    return;
+  }
+
+  // D-05: Start AI conversation with message content as context (same as Phase 2 flow)
+  // D-06: No permission check -- open to all channel members in v1
+  await deps.enqueueForAgent(channelId, messageTs, messageText);
+}
+
 // --- Initialization ---
 
-/** Register approval flow action handlers on the Slack channel. */
+/** Register approval flow action and reaction handlers on the Slack channel. */
 export function initApprovalFlow(
-  channel: { onAction: (id: string, handler: ActionHandler) => void },
+  channel: {
+    onAction: (id: string, handler: ActionHandler) => void;
+    onReaction: (emoji: string, handler: ReactionHandler) => void;
+  },
   deps: FullDeps,
 ): void {
   channel.onAction('draft_approve', (payload) => handleDraftApprove(payload, deps));
   channel.onAction('draft_edit', (payload) => handleDraftEdit(payload, deps));
+  channel.onReaction('jira', (payload) => handleJiraReaction(payload, deps));
 }

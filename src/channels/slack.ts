@@ -24,6 +24,18 @@ export interface ActionPayload {
 /** Callback type for Slack interactive component handlers. */
 export type ActionHandler = (payload: ActionPayload) => Promise<void>;
 
+/** Payload passed to reaction handler callbacks registered via onReaction(). */
+export interface ReactionPayload {
+  event: {
+    reaction: string;
+    user: string;
+    item: { type: string; channel: string; ts: string };
+  };
+}
+
+/** Callback type for Slack emoji reaction handlers. */
+export type ReactionHandler = (payload: ReactionPayload) => Promise<void>;
+
 // Slack's chat.postMessage API limits text to ~4000 characters per call.
 // Messages exceeding this are split into sequential chunks.
 const MAX_MESSAGE_LENGTH = 4000;
@@ -49,6 +61,7 @@ export class SlackChannel implements Channel {
   private flushing = false;
   private userNameCache = new Map<string, string>();
   private actionHandlers = new Map<string, ActionHandler>();
+  private reactionHandlers = new Map<string, ReactionHandler>();
 
   private opts: SlackChannelOpts;
 
@@ -76,6 +89,7 @@ export class SlackChannel implements Channel {
 
     this.setupEventHandlers();
     this.setupActionHandlers();
+    this.setupReactionHandlers();
   }
 
   private setupEventHandlers(): void {
@@ -332,6 +346,14 @@ export class SlackChannel implements Channel {
     this.actionHandlers.set(actionId, handler);
   }
 
+  /**
+   * Register a handler for a Slack emoji reaction by emoji name.
+   * When a reaction_added event fires with a matching emoji, the handler is called.
+   */
+  onReaction(emoji: string, handler: ReactionHandler): void {
+    this.reactionHandlers.set(emoji, handler);
+  }
+
   private setupActionHandlers(): void {
     // Catch-all action handler -- routes to registered callbacks per D-05
     this.app.action(/.+/, async ({ action, ack, body, respond }: any) => {
@@ -348,6 +370,20 @@ export class SlackChannel implements Channel {
         }
       } else {
         logger.warn({ actionId }, 'No handler registered for action');
+      }
+    });
+  }
+
+  private setupReactionHandlers(): void {
+    this.app.event('reaction_added', async ({ event }: any) => {
+      if (event.item?.type !== 'message') return;
+      const handler = this.reactionHandlers.get(event.reaction);
+      if (handler) {
+        try {
+          await handler({ event });
+        } catch (err) {
+          logger.error({ reaction: event.reaction, err }, 'Reaction handler error');
+        }
       }
     });
   }
