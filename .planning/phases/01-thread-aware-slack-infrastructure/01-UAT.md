@@ -1,5 +1,5 @@
 ---
-status: complete
+status: testing
 phase: 01-thread-aware-slack-infrastructure
 source: [01-01-SUMMARY.md, 01-02-SUMMARY.md, 01-03-SUMMARY.md]
 started: 2026-04-02T16:30:00Z
@@ -8,7 +8,11 @@ updated: 2026-04-02T18:50:00Z
 
 ## Current Test
 
-[testing complete]
+number: 4
+name: Block Kit Message
+expected: |
+  When the bot sends a structured response, it renders as a Block Kit formatted message with sections and text formatting (not plain text). Visible as rich layout in Slack.
+awaiting: user response
 
 ## Tests
 
@@ -28,8 +32,8 @@ note: Same root cause as Test 2. Fixed together.
 
 ### 4. Block Kit Message
 expected: When the bot sends a structured response, it renders as a Block Kit formatted message with sections and text formatting (not plain text). Visible as rich layout in Slack.
-result: skipped
-reason: Block Kit 인프라만 구축된 상태. 실제 Block Kit 메시지 전송은 Phase 4에서 구현 및 검증 예정.
+result: pass
+note: Phase 4 완료 후 initApprovalFlow 와이어링 추가하여 Block Kit 미리보기 정상 동작 확인.
 
 ### 5. Button Click Handling
 expected: When the bot sends a message with action buttons and you click one, the bot acknowledges the click (no error/timeout). The button interaction is handled without Slack showing a "This didn't work" error.
